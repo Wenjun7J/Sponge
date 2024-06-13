@@ -11,6 +11,11 @@
 
 //! \brief The "sender" part of a TCP implementation.
 
+struct MyCompare {
+    bool operator()(std::pair<uint64_t, TCPSegment>& a, std::pair<uint64_t, TCPSegment>& b) {
+        return a.first > b.first;
+    }
+};
 //! Accepts a ByteStream, divides it up into segments and sends the
 //! segments, keeps track of which segments are still in-flight,
 //! maintains the Retransmission Timer, and retransmits in-flight
@@ -31,6 +36,20 @@ class TCPSender {
 
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
+
+    size_t _tick_time{0};
+    size_t _window_size{1};
+    size_t _remaining_size{1};
+    std::priority_queue<std::pair<uint64_t, TCPSegment>, 
+                        std::vector<std::pair<uint64_t, TCPSegment> >, 
+                        MyCompare> _outstanding_segment{};
+    unsigned int _retry_cnt{0};
+    unsigned int _elapsed_time{0};
+    bool _timer_stop{false};
+    unsigned int _rto{0};
+    size_t _bytes_in_flight{0};
+    uint64_t _receiver_ackno{0};
+    bool _closed{false};
 
   public:
     //! Initialize a TCPSender
